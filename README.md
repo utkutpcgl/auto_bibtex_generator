@@ -1,9 +1,9 @@
-# auto_bibtex_generator
+# AUTO BIBTEX GENERATOR
 Generates bibtex automatically when the author and title information is available. This script is the second part of a 2 step auto bibtex generation process. 
 
-# AUTOMATIC BIBTEX GENERATION FROM TEXT
+## AUTOMATIC BIBTEX GENERATION FROM TEXT
 
-## Step 1:
+### Step 1:
 You can feed a text to this GPT (here: https://chatgpt.com/g/g-qkXOfDbtO-text-to-reference-python-list-and-rewrite) to output the required input for this repository. The output will be in this format:
 
     raw_papers = [
@@ -15,5 +15,5 @@ You can feed a text to this GPT (here: https://chatgpt.com/g/g-qkXOfDbtO-text-to
         ("Dai", "Deformable Convolutional Networks", "dai2017deformable")
     ]
 
-## Step 2:
+### Step 2:
 Then you can change the raw_papers variable in get_bib_arxiv.py. When you run the code it will print the BibTeX references.
