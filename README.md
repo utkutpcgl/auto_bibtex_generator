@@ -20,4 +20,4 @@ Then you can change the raw_papers variable in get_bib_arxiv.py. When you run th
 
 
 ### Required python packages:
-- arxiv (Verified with version 2.1.0):
+- arxiv (Verified with version 2.1.0).
