@@ -17,3 +17,7 @@ You can feed a text to this GPT (here: https://chatgpt.com/g/g-qkXOfDbtO-text-to
 
 ### Step 2:
 Then you can change the raw_papers variable in get_bib_arxiv.py. When you run the code it will print the BibTeX references.
+
+
+### Required python packages:
+- arxiv (Verified with version 2.1.0):
