@@ -7,28 +7,49 @@ SIMILARITY_THRESHOLD = 0.9
 def similar(a, b):
     return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
-def get_arxiv_bibtex(author, title:str, citation_key):
-    # Construct the default API client.
-    client = arxiv.Client()
-    query = f'ti:{title} AND au:{author}' #  AND au:{author}
+def get_best_match(results, title):
+    # results = list(i for i in results)
+    best_match = None
+    highest_similarity = 0
+    try:
+        for candidate_id, result in enumerate(results):
+            result_title = result.title.strip()
+            similarity = similar(title.lower(), result_title.lower())
+            if similarity > highest_similarity:
+                highest_similarity = similarity
+                best_match = result
+                if highest_similarity > SIMILARITY_THRESHOLD:
+                    break
+    except arxiv.UnexpectedEmptyPageError:
+        return best_match, highest_similarity
+    return best_match, highest_similarity
+
+def search_and_get_best_match(query,client,title):
     search = arxiv.Search(
         query=query,
         max_results=10000,
         sort_by=arxiv.SortCriterion.Relevance
     )
     results = client.results(search)
-    # results = list(i for i in results)
-    best_match = None
-    highest_similarity = 0
+    best_match, highest_similarity = get_best_match(results, title)
+    return best_match, highest_similarity
 
-    for candidate_id, result in enumerate(results):
-        result_title = result.title.strip()
-        similarity = similar(title.lower(), result_title.lower())
-        if similarity > highest_similarity:
-            highest_similarity = similarity
-            best_match = result
-            if highest_similarity > SIMILARITY_THRESHOLD:
-                break
+def try_until_best_match_found(client,author, title):
+    query = f'ti:{title} AND au:{author}' #  AND au:{author}
+    query_titleonly = f'ti:{title}' #  AND au:{author}
+    query_authoronly = f'au:{author}'
+    best_match, highest_similarity = search_and_get_best_match(query=query,client=client,title=title)
+    if not best_match:
+        best_match, highest_similarity = search_and_get_best_match(query=query_titleonly,client=client,title=title)
+    if not best_match:
+        best_match, highest_similarity = search_and_get_best_match(query=query_authoronly,client=client,title=title)
+    return best_match, highest_similarity
+    
+
+def get_arxiv_bibtex(author, title:str, citation_key):
+    # Construct the default API client.
+    client = arxiv.Client()
+    best_match, highest_similarity = try_until_best_match_found(client=client, author=author, title=title)
 
     if best_match and highest_similarity > 0.8:  # adjust the threshold as needed
         arxiv_id = best_match.entry_id.split('/')[-1]
@@ -44,7 +65,7 @@ def get_arxiv_bibtex(author, title:str, citation_key):
         bibtex += f"  eprint={{ {arxiv_id_no_version} }},\n"
         bibtex += f"  eprinttype={{ arXiv }},\n"
         bibtex += f"  url={{ {best_match.entry_id} }}\n"
-        bibtex += "}\n"
+        bibtex += "}"
         return bibtex
     return None
 
@@ -54,7 +75,7 @@ def process_papers(papers):
         bibtex = get_arxiv_bibtex(author, title, citationkey)
         if bibtex:
             bibtex_entries.append(bibtex)
-            print(f"\n{bibtex}")
+            print(f"{bibtex}")
         else:
             print(f"#No BibTeX found for the paper '{title}' by '{author}' with citation key: '{citationkey}'")
         time.sleep(15)  # Corrected rate limiting to comply with arXiv's terms of use
@@ -70,13 +91,16 @@ def fix_paper_titles(raw_papers):
 
 # Example usage
 raw_papers = [
-    ("Howard", "MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications", "howard2017mobilenets"),
-    ("Tan and Le", "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks", "tan2019efficientnet"),
-    ("He", "Deep Residual Learning for Image Recognition", "he2016deep"),
-    ("Huang", "Densely Connected Convolutional Networks", "huang2017densely"),
-    ("Wang", "Deep High-Resolution Representation Learning for Visual Recognition", "wang2019deep"),
-    ("Dai", "Deformable Convolutional Networks", "dai2017deformable")
+    ("Srinivas", "Simulated Annealing Algorithm for Deep Learning", "srinivas2010simulated"),
+    ("Zhang", "A Closer Look at Memorization in Deep Networks", "zhang2017closer"),
+    ("Senior", "Learning-Rate Annealing Methods for Deep Neural Networks", "senior2013learning"),
+    ("Baydin", "No More Pesky Learning Rates", "baydin2017nomore"),
+    ("Smith", "Super-Convergence: Very Fast Training of Neural Networks Using Large Learning Rates", "smith2017super"),
+    ("Smith", "Cyclical Learning Rates for Training Neural Networks", "smith2017cyclical"),
+    ("Loshchilov", "SGDR: Stochastic Gradient Descent with Warm Restarts", "loshchilov2016sgdr"),
+    ("Kingma", "Adam: A Method for Stochastic Optimization", "kingma2014adam"),
 ]
+
 
 fixed_papers = fix_paper_titles(raw_papers=raw_papers)
 # Example usage with your defined list of papers
